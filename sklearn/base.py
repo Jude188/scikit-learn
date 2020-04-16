@@ -8,18 +8,18 @@ Used for VotingClassifier
 # License: BSD 3 clause
 
 import copy
-import warnings
-from collections import defaultdict
-import platform
 import inspect
+import platform
 import re
+import warnings
+from abc import ABCMeta, abstractmethod
+from collections import defaultdict
 
 import numpy as np
 
 from . import __version__
 from .utils import _IS_32BIT
-from .utils.validation import check_X_y
-from .utils.validation import check_array
+from .utils.validation import check_array, check_X_y
 
 _DEFAULT_TAGS = {
     'non_deterministic': False,
@@ -631,6 +631,71 @@ class TransformerMixin:
         else:
             # fit method of arity 2 (supervised transformation)
             return self.fit(X, y, **fit_params).transform(X)
+
+
+class PipeTransformerMixin(metaclass=ABCMeta):
+    """Mixin class for all pipe transformers in scikit-learn."""
+
+    def fit_pipe(self, X, y, **fit_params):
+        """
+        Fit to data, then transform and modify it.
+
+        Fits transformer to X and y with optional parameters fit_params
+        and returns a transformed version of X and y.
+
+        Parameters
+        ----------
+        X : ndarray of shape (n_samples, n_features)
+            Training set.
+
+        y : ndarray of shape (n_samples,), default=None
+            Target values.
+
+        **fit_params : dict
+            Additional fit parameters.
+
+        Returns
+        -------
+        X_new : ndarray array of shape (n_samples, n_features_new)
+            Transformed array.
+        y_new : ndarray array of shape (n_samples,)
+            Transformed array.
+        sample_props : dict
+            A dictionary with sample properties as keys and ndarrays
+            of shape (n_samples,) as values.
+        """
+        return self.fit(X, y, **fit_params).transform_pipe(X, y, **fit_params)
+
+
+    @abstractmethod
+    def transform_pipe(self, X, y, **transform_params):
+        """
+        Fit to data, then transform it.
+
+        Fits transformer to X and y with optional parameters fit_params
+        and returns a transformed version of X and y.
+
+        Parameters
+        ----------
+        X : ndarray of shape (n_samples, n_features)
+            Training set.
+
+        y : ndarray of shape (n_samples,), default=None
+            Target values.
+
+        **transform_params : dict
+            Additional transform parameters.
+
+        Returns
+        -------
+        X_new : ndarray array of shape (n_samples, n_features_new)
+            Transformed array.
+        y_new : ndarray array of shape (n_samples,)
+            Transformed array.
+        sample_props : dict
+            A dictionary with sample properties as keys and ndarrays
+            of shape (n_samples,) as values.
+        """
 
 
 class DensityMixin:

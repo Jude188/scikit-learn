@@ -177,10 +177,12 @@ class Pipeline(_BaseComposition):
         for t in transformers:
             if t is None or t == 'passthrough':
                 continue
-            if (not (hasattr(t, "fit") or hasattr(t, "fit_transform")) or not
-                    hasattr(t, "transform")):
+            if (not (hasattr(t, "fit") or hasattr(t, "fit_pipe") or
+                        hasattr(t, "fit_pipe")) or not
+                    (hasattr(t, "transform") or hasattr(t, "transform_pipe"))):
                 raise TypeError("All intermediate steps should be "
-                                "transformers and implement fit and transform "
+                                "transformers and implement fit and transform or "
+                                "fit_pipe and transform_pipe"
                                 "or be the string 'passthrough' "
                                 "'%s' (type %s) doesn't" % (t, type(t)))
 
@@ -730,7 +732,9 @@ def _fit_transform_one(transformer,
     be multiplied by ``weight``.
     """
     with _print_elapsed_time(message_clsname, message):
-        if hasattr(transformer, 'fit_transform'):
+        if hasattr(transformer, 'fit_pipe'):
+            res = transformer.fit_pipe(X, y, **fit_params)
+        elif hasattr(transformer, 'fit_transform'):
             res = transformer.fit_transform(X, y, **fit_params)
         else:
             res = transformer.fit(X, y, **fit_params).transform(X)
